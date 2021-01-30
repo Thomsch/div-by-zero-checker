@@ -30,8 +30,13 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
      */
     private boolean errorAt(BinaryTree node) {
         // A BinaryTree represents a binary operator, like + or -.
-        // TODO
-        return false;
+        // System.out.println(node.toString() + " -> " + DIVISION_OPERATORS.contains(node.getKind()));
+        return DIVISION_OPERATORS.contains(node.getKind())
+                && (hasAnnotation(node.getRightOperand(), Top.class) ||
+                    hasAnnotation(node.getRightOperand(), Zero.class) ||
+                    hasAnnotation(node.getRightOperand(), Bottom.class));
+
+        // There is no need to call errorAt for the children nodes as the visit of the binary tree is done by visitBinary
     }
 
     /**
@@ -41,10 +46,13 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
      * @return true if an error should be reported, false otherwise
      */
     private boolean errorAt(CompoundAssignmentTree node) {
-        // A CompoundAssignmentTree represents a binary operator plus assignment,
-        // like "x += 10".
-        // TODO
-        return false;
+        // A CompoundAssignmentTree represents a binary operator plus assignment, like "x += 10".
+        return DIVISION_OPERATORS.contains(node.getKind())
+                && (hasAnnotation(node.getExpression(), Top.class) ||
+                hasAnnotation(node.getExpression(), Zero.class) ||
+                hasAnnotation(node.getExpression(), Bottom.class));
+        // There is no need to call errorAt for the children nodes as the visit of the binary tree is done by
+        // visitCompoundAssignment
     }
 
     // ========================================================================
