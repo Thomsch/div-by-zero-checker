@@ -71,7 +71,34 @@ public class DivByZeroTransfer extends CFTransfer {
             Comparison operator,
             AnnotationMirror lhs,
             AnnotationMirror rhs) {
-        // TODO
+
+        switch (operator) {
+            case EQ:
+                return rhs;
+            case NE:
+                if (equal(rhs, zero)) {
+                    return nonZero;
+                } else if (equal(rhs, nonZero)) {
+                    return zero;
+                } else if (equal(rhs, positive) || equal(rhs, negative)) {
+                    return top();
+                }
+                return rhs;
+            case LT:
+                if (equal(rhs, zero)){
+                    return negative;
+                }
+                break;
+            case LE:
+                break;
+            case GT:
+                if (equal(rhs, zero)){
+                    return positive;
+                }
+                break;
+            case GE:
+                break;
+        }
         return lhs;
     }
 
@@ -93,12 +120,66 @@ public class DivByZeroTransfer extends CFTransfer {
             BinaryOperator operator,
             AnnotationMirror lhs,
             AnnotationMirror rhs) {
-        // TODO
+        switch (operator){
+            case PLUS:
+                if (equal(lhs, zero)) return rhs;
+                if (equal(rhs, zero)) return lhs;
+                if (equal(lhs, rhs)) return lhs;
+                break;
+            case MINUS:
+                if((equal(lhs, negative) || equal(lhs, zero)) && equal(rhs, positive)) return negative;
+                if (equal(lhs, positive) && (equal(rhs, negative) || equal(rhs, zero))) return positive;
+                if(equal(lhs, zero) && equal(rhs, zero)) return zero;
+                break;
+            case TIMES:
+                if (equal(lhs, bottom()) || equal(rhs, bottom())) {
+                    return bottom();
+                }
+
+                if (equal(lhs, top()) || equal(rhs, top())) {
+                    return top();
+                }
+
+                if(equal(lhs, zero) || equal(rhs, zero)){
+                    return zero;
+                }
+
+                if (equal(lhs, positive) && equal(rhs, positive)){
+                    return positive;
+                }
+
+                if (equal(lhs, negative) && equal(rhs, negative)){
+                    return positive;
+                }
+
+                if (!equal(lhs, rhs)) {
+                    return negative;
+                }
+
+                break;
+            case DIVIDE:
+                if(equal(rhs, zero) || equal(rhs, top()) || equal(rhs, bottom())) return bottom();
+                if(equal(lhs, zero)) return zero;
+
+                // Division when both operand are the same type yield the same type except when they are both negative.
+                if(equal(lhs, rhs) && equal(lhs, negative)) {
+                    return positive;
+                } else {
+                    return lhs;
+                }
+            case MOD:
+                break;
+        }
         return top();
     }
 
     // ========================================================================
     // Useful helpers
+
+    final private AnnotationMirror zero = reflect(Zero.class);
+    final private AnnotationMirror nonZero = reflect(NonZero.class);
+    final private AnnotationMirror positive = reflect(Positive.class);
+    final private AnnotationMirror negative = reflect(Negative.class);
 
     /** Get the top of the lattice */
     private AnnotationMirror top() {
