@@ -30,11 +30,21 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
      */
     private boolean errorAt(BinaryTree node) {
         // A BinaryTree represents a binary operator, like + or -.
-        // System.out.println(node.toString() + " -> " + DIVISION_OPERATORS.contains(node.getKind()));
-        return DIVISION_OPERATORS.contains(node.getKind())
+//        System.out.println(node.toString());
+//        System.out.println(
+//                node.getLeftOperand() + "(" + atypeFactory.getAnnotatedType(node.getLeftOperand()) + ") "
+//                + node.getKind() + " "
+//                + node.getRightOperand() + "(" + atypeFactory.getAnnotatedType(node.getRightOperand()) + ")");
+
+        boolean result = hasAnnotation(node, Bottom.class) || DIVISION_OPERATORS.contains(node.getKind())
                 && (hasAnnotation(node.getRightOperand(), Top.class) ||
-                    hasAnnotation(node.getRightOperand(), Zero.class) ||
-                    hasAnnotation(node.getRightOperand(), Bottom.class));
+                hasAnnotation(node.getRightOperand(), Zero.class) ||
+                hasAnnotation(node.getRightOperand(), Bottom.class));
+
+//        System.out.println(atypeFactory.getAnnotatedType(node));
+//        System.out.println(result);
+//        System.out.println();
+        return result;
 
         // There is no need to call errorAt for the children nodes as the visit of the binary tree is done by visitBinary
     }
@@ -47,7 +57,7 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
      */
     private boolean errorAt(CompoundAssignmentTree node) {
         // A CompoundAssignmentTree represents a binary operator plus assignment, like "x += 10".
-        return DIVISION_OPERATORS.contains(node.getKind())
+        return hasAnnotation(node, Bottom.class) || DIVISION_OPERATORS.contains(node.getKind())
                 && (hasAnnotation(node.getExpression(), Top.class) ||
                 hasAnnotation(node.getExpression(), Zero.class) ||
                 hasAnnotation(node.getExpression(), Bottom.class));
