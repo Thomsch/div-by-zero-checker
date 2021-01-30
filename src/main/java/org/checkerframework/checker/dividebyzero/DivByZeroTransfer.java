@@ -76,30 +76,24 @@ public class DivByZeroTransfer extends CFTransfer {
             case EQ:
                 return rhs;
             case NE:
-                if (equal(rhs, zero)) {
-                    return nonZero;
-                } else if (equal(rhs, nonZero)) {
-                    return zero;
-                } else if (equal(rhs, positive) || equal(rhs, negative)) {
-                    return top();
-                }
-                return rhs;
+                if (equal(rhs, zero)) return nonZero;
+                if (equal(rhs, nonZero)) return zero;
+                if (equal(rhs, positive) || equal(rhs, negative)) return top();
+                break;
             case LT:
-                if (equal(rhs, zero)){
-                    return negative;
-                }
+                if (equal(rhs, zero) || equal(rhs, negative)) return negative;
                 break;
             case LE:
+                if (equal(rhs, negative)) return negative;
                 break;
             case GT:
-                if (equal(rhs, zero)){
-                    return positive;
-                }
+                if (equal(rhs, zero) || equal(rhs, positive)) return positive;
                 break;
             case GE:
+                if (equal(rhs, positive)) return positive;
                 break;
         }
-        return lhs;
+        return glb(lhs, rhs);
     }
 
     /**
