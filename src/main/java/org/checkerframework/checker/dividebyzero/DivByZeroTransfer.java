@@ -114,57 +114,40 @@ public class DivByZeroTransfer extends CFTransfer {
             BinaryOperator operator,
             AnnotationMirror lhs,
             AnnotationMirror rhs) {
+        if (equal(lhs, bottom()) || equal(rhs, bottom())) return bottom(); // bottom converts everything to bottom.
+
         switch (operator){
             case PLUS:
-                if (equal(lhs, zero)) return rhs;
-                if (equal(rhs, zero)) return lhs;
-                if (equal(lhs, rhs)) return lhs;
+                if (equal(lhs, zero)) return rhs; // 0 + x = x
+                if (equal(rhs, zero)) return lhs; // x + 0 = x
+
+                // lhs and rhs are positive and negative, which means it cannot be nonZero but top() instead.
+                if (equal(lub(lhs, rhs), nonZero)) return top(); // e.g., 1 + (-1)
                 break;
             case MINUS:
-                if((equal(lhs, negative) || equal(lhs, zero)) && equal(rhs, positive)) return negative;
-                if (equal(lhs, positive) && (equal(rhs, negative) || equal(rhs, zero))) return positive;
-                if(equal(lhs, zero) && equal(rhs, zero)) return zero;
+                if ((equal(lhs, negative) || equal(lhs, zero)) && equal(rhs, positive)) return negative; // (y<=0) - (x+) < 0
+                if (equal(lhs, positive) && (equal(rhs, negative) || equal(rhs, zero))) return positive; // (x+) - (y<=0) > 0
+                if (equal(lhs, zero) && equal(rhs, negative)) return positive; // e.g., 0 - (-3) = 3
+                if(equal(lhs, rhs) && (equal(lhs, positive) || equal(lhs, negative))) return top(); // e.g., -3 - (-3) = 0
                 break;
             case TIMES:
-                if (equal(lhs, bottom()) || equal(rhs, bottom())) {
-                    return bottom();
-                }
-
-                if (equal(lhs, top()) || equal(rhs, top())) {
-                    return top();
-                }
-
-                if(equal(lhs, zero) || equal(rhs, zero)){
-                    return zero;
-                }
-
-                if (equal(lhs, positive) && equal(rhs, positive)){
-                    return positive;
-                }
-
-                if (equal(lhs, negative) && equal(rhs, negative)){
-                    return positive;
-                }
-
-                if (!equal(lhs, rhs)) {
-                    return negative;
-                }
-
+                if (equal(lhs, zero) || equal(rhs, zero)) return zero; // x * 0 | 0 * x = 0
+                if (equal(lhs, rhs) && equal(lhs, negative)) return positive; // (-x) * (-y) = (+z)
+                if (!equal(lhs, rhs) && equal(lub(lhs, rhs), nonZero)) return negative; // (-x) * (+y) = (-z)
                 break;
             case DIVIDE:
-                if(equal(rhs, zero) || equal(rhs, top()) || equal(rhs, bottom())) return bottom();
-                if(equal(lhs, zero)) return zero;
-
-                // Division when both operand are the same type yield the same type except when they are both negative.
-                if(equal(lhs, rhs) && equal(lhs, negative)) {
-                    return positive;
-                } else {
-                    return lhs;
-                }
-            case MOD:
+                if (equal(rhs, zero) || equal(rhs, top())) return bottom(); // x / 0 = undefined
+                if (equal(lhs, zero)) return zero; // 0 / x = 0
+                if (equal(lhs, rhs) && equal(lhs, negative)) return positive; // (-x) / (-y) = (+z)
+                if (!equal(lhs, rhs) && equal(lub(lhs, rhs), nonZero)) return negative; // (-x) * (+y) = (-z)
                 break;
+            case MOD:
+                if (equal(rhs, zero)) return bottom(); // x % 0 = undefined
+                if (equal(lhs, zero)) return zero; // 0 % x = 0
+                return top(); // Any operand with any operand could cause a zero. e.g.,  2 % 1 = 0
         }
-        return top();
+        // lub() is slightly more discriminating than top() and make it easier to add special cases as defined above.
+        return lub(lhs, rhs);
     }
 
     // ========================================================================
